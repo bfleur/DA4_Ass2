@@ -25,6 +25,8 @@ library(modelsummary)
 library(fixest)
 #install.packages("urca")
 library(urca)
+#install.packages("tidyr")
+library(tidyr)
 
 # set working directory
 # option A: open material as project
@@ -35,11 +37,11 @@ setwd("/Users/Virág/Documents/CEU/2nd year/2nd trimester/Data4/Assignment2")
 
 
 # set data dir, data used
-source("set-data-directory.R")             # data_dir must be first defined 
+#source("set-data-directory.R")             # data_dir must be first defined 
 # alternative: give full path here, 
 #            example data_dir="C:/Users/bekes.gabor/Dropbox (MTA KRTK)/bekes_kezdi_textbook/da_data_repo"
 
-data_dir= "/Users/Virág/Documents/CEU/2nd year/2nd trimester/Data4/Assignment2/WB_data"
+data_dir= "/Users/Virág/Documents/CEU/2nd year/2nd trimester/Data4/Assignment2/WB_data/"
 
 # load theme and functions
 source("ch00-tech-prep/theme_bg.R")
@@ -55,11 +57,131 @@ create_output_if_doesnt_exist(output)
 #-------------------------------------------------------
 # Import data
 
-data <- read_dta(paste(data_in, "worldbank-immunization-continents.dta", sep = ""))
+data_raw <- read.csv(paste(data_in, "WB_DA4_data_raw.csv", sep = ""))
+
+summarize(data_raw)
 
 #2. Cleaning: nas, dividing by populations where necessary, check for extreme values
-# check data format, transform if necessary, delete rows whcih dont denote countries
+# check data format, transform if necessary, delete rows which dont denote countries
 # transform stuff into logs, calculate first differences
+
+sum(duplicated(data_raw))
+# there seems to be 2 duplicate elements
+data_raw <- data_raw %>% distinct()
+
+
+# converting from long to tidy format
+#reshape(data_raw, idvar = "Country.Code", timevar = "numbers", direction = "wide")
+
+colnames(data_raw)
+
+
+c_names = c("country", "country_code", "series", "series_code", "1992", "1993", "1994", "1995",
+            "1996", "1997", "1998", "1999", "2000", "2001", "2002", "2003", "2004", "2005", "2006", "2007",
+            "2008", "2009", "2010", "2011", "2012", "2013", "2014", "2015", "2016", "2017", "2018")
+
+i <- 1
+while (i < 32) {
+  names(data_raw)[i] <- c_names[i]
+  
+  i = i+1
+}
+
+colnames(data_raw)
+
+# first we want to convert the data into long format
+#data_raw_wide <- reshape(data_raw, idvar = "country", timevar = "series", direction = "wide")
+
+year_columns = c('1992', '1993', '1994', '1995',
+                 '1996', '1997', '1998', '1999', '2000', '2001', '2002', '2003', '2004', '2005', '2006', '2007',
+                 '2008', '2009', '2010', '2011', '2012', '2013', '2014', '2015', '2016', '2017', '2018')
+
+data_raw_pivot <- data_raw %>% 
+  pivot_longer(year_columns, names_to = "year", values_to = "series_p")
+
+#data_raw_tidy <- reshape(data_raw_pivot, idvar = ("country", "year"), timevar = "series", direction = "wide")
+
+#install.packages("dplyr")
+library(dplyr)
+
+#install.packages("broom")
+library(broom)
+
+#install.packages("broom.mixed")
+library(broom.mixed)
+
+#data_raw_tidy <- data_raw_pivot %>%
+#  group_by(country) %>%
+#  mutate(row = row_number()) %>%
+#  tidyr::pivot_wider(names_from = series, values_from = series_p) %>%
+#  select(-row)
+
+
+#data_raw_tidy <- data_raw_pivot %>%
+#  pivot_wider(., names_from = series, values_from = series_p)
+
+#then we make it wide
+
+data_raw_pivot <- data_raw_pivot %>%
+  group_by(country) %>%
+  mutate(row = row_number()) %>%
+  #tidyr::pivot_wider(names_from = series, values_from = series_p) %>%
+  select(-row)
+
+#data_raw_tidy <- spread(data_raw_pivot, series, series_p)
+
+library(reshape2)
+
+data_raw_tidy2 <- dcast(data_raw_pivot, country + year ~ series, value.var="series_p")
+write.csv(data_raw_tidy2,paste(data_dir, 'WB_wideform.csv', sep = "/"), row.names = FALSE)
+
+# check for missing values
+is.na(data_raw_tidy2)
+apply(is.na(data_raw_tidy2), 2, which)
+
+cn_tidy = colnames(data_raw_tidy2)
+cn_tidy
+
+length(colnames(data_raw_tidy2))
+sum(is.na(cn_tidy[1]))
+cn_tidy[1]
+print(na)
+
+i<- 1
+while (i<10) {
+  na <- sum(is.na(cn_tidy[i]))
+  print(cn_tidy[i])
+  print(na)
+
+  i= i+1
+}
+
+# drop obs which cant't be used due to nas
+# subset(dataframe, A==B & E!=0)
+data_raw_tidy2 <- subset(data_raw_tidy2, country != "")
+
+
+
+# drop column with name "Var.3"
+data_raw_tidy2 <- subset(data_raw_tidy2, select = -c(Var.3))
+
+# give proper names again
+c_names2 = c("country", "year", "electr", "co2_tot", "ff_c", "GDP_tot", "pop", 
+             "fuel_pr")
+length(c_names2)
+
+i <- 1
+while (i < 9) {
+  names(data_raw_tidy2)[i] <- c_names2[i]
+  
+  i = i+1
+}
+
+colnames(data_raw_tidy2)
+
+
+# create "per capita" variables
+data_raw_tidy2$co2_em_pc <- 
 
 # 3. Visualization, checking the data, extreme values?
 
