@@ -1,1 +1,6 @@
 # DA4_Ass2
+This is a project dedicated to an assignment for the Data Analysis 4 course. 
+The main aim of this project is to explore the relationship of GDP per capita and per capita CO2 emissions.
+The raw data is sourced from the World Bank Development Indicators databank and contains data from 1992 through 2016 (being the last year with complete data) on more than 260 countries globally. The wide data is a transformed and cleaned version of the raw file, while the balanced csv is a balanced panel version of the raw file. The final, balanced version contains 4400 observations on 25 years and 176 countries. 
+The final data has 18 variables: country, year, access to electricity (% of population), total Co2 emission (per metric ton), fossil fuel consumption (% of total fuel consumption), total GDP (USD, constant 2010 prices), total population, fuel price (USD per liter), ln GDP per capita, ln CO2 emission per capita, ln population, first differences of ln GDP per capita, ln population, ln CO2 emission per capita, second difference of ln GDP per capita, average population (per country, over time). 
+We take the log of some variables as they have a multiplicative nature and changes in them can be well studied this way.
